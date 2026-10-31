@@ -8,5 +8,7 @@ router.use('/faqs', require('./faq.routes'))         // FAQ 问答
 router.use('/articles', require('./article.routes')) // 文章
 router.use('/adverts', require('./advert.routes'))   // 广告
 router.use('/upload', require('./upload.routes'))    // 图片上传
+router.use('/tasks', require('./task.routes'))       // LLM 微调任务
+router.use('/sync', require('./sync.routes'))        // Star 同步管理
 
 module.exports = router
