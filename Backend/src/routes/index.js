@@ -7,5 +7,6 @@ router.use('/projects', require('./project.routes')) // 开源项目榜单
 router.use('/faqs', require('./faq.routes'))         // FAQ 问答
 router.use('/articles', require('./article.routes')) // 文章
 router.use('/adverts', require('./advert.routes'))   // 广告
+router.use('/upload', require('./upload.routes'))    // 图片上传
 
 module.exports = router

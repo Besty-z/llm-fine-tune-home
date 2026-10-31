@@ -1,53 +1,71 @@
-// FAQ 控制器：问答增删改查
+// FAQ 控制器：问答增删改查（软删除 + 可选分页）
 const Faq = require('../models/Faq')
-const { ok, fail } = require('../utils/resp')
+const ApiError = require('../utils/apiError')
+const { ok } = require('../utils/resp')
+const { paginate, isPageRequest } = require('../utils/pagination')
 
-/** FAQ 列表：按 sort 升序（前端 FAQ 页数据源） */
-exports.getFaqs = async (req, res) => {
+const DEFAULT_SORT = { sort: 1, createdAt: -1 } // 排序值小的靠前，相同则新的靠前
+
+/** FAQ 列表：携带 page/pageSize/keyword 时返回分页结构，否则返回数组（前端 FAQ 页数据源） */
+exports.getFaqs = async (req, res, next) => {
   try {
-    const faqs = await Faq.find().sort({ sort: 1, createdAt: -1 })
-    ok(res, faqs)
+    // 兼容旧契约：不带分页参数时直接返回数组
+    if (!isPageRequest(req.query)) {
+      const faqs = await Faq.find({ isDeleted: { $ne: true } }).sort(DEFAULT_SORT)
+      return ok(res, faqs)
+    }
+    const result = await paginate(Faq, {
+      query: req.query,
+      searchFields: ['question', 'answer'],
+      sort: DEFAULT_SORT
+    })
+    ok(res, result)
   } catch (error) {
-    fail(res, 500, `查询失败: ${error.message}`)
+    next(error)
   }
 }
 
 /** 新增 FAQ（管理员） */
-exports.createFaq = async (req, res) => {
+exports.createFaq = async (req, res, next) => {
   try {
     const { question, answer, sort } = req.body
-    if (!question || !answer) {
-      return fail(res, 400, '问题和答案不能为空')
-    }
     const faq = await Faq.create({ question, answer, sort })
     ok(res, faq, '新增成功')
   } catch (error) {
-    fail(res, 500, `新增失败: ${error.message}`)
+    next(error)
   }
 }
 
-/** 更新 FAQ（管理员） */
-exports.updateFaq = async (req, res) => {
+/** 更新 FAQ（管理员，软删除的数据不可更新） */
+exports.updateFaq = async (req, res, next) => {
   try {
-    const faq = await Faq.findByIdAndUpdate(req.params.id, req.body, { new: true })
+    const faq = await Faq.findOneAndUpdate(
+      { _id: req.params.id, isDeleted: { $ne: true } },
+      req.body,
+      { new: true }
+    )
     if (!faq) {
-      return fail(res, 404, 'FAQ 不存在')
+      throw ApiError.notFound('FAQ 不存在')
     }
     ok(res, faq, '更新成功')
   } catch (error) {
-    fail(res, 500, `更新失败: ${error.message}`)
+    next(error)
   }
 }
 
-/** 删除 FAQ（管理员） */
-exports.deleteFaq = async (req, res) => {
+/** 删除 FAQ（管理员，软删除：仅标记 isDeleted，数据可恢复） */
+exports.deleteFaq = async (req, res, next) => {
   try {
-    const faq = await Faq.findByIdAndDelete(req.params.id)
+    const faq = await Faq.findOneAndUpdate(
+      { _id: req.params.id, isDeleted: { $ne: true } },
+      { isDeleted: true },
+      { new: true }
+    )
     if (!faq) {
-      return fail(res, 404, 'FAQ 不存在')
+      throw ApiError.notFound('FAQ 不存在')
     }
     ok(res, null, '删除成功')
   } catch (error) {
-    fail(res, 500, `删除失败: ${error.message}`)
+    next(error)
   }
 }

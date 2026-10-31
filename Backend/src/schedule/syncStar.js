@@ -4,6 +4,7 @@
 const cron = require('node-cron')
 const axios = require('axios')
 const Project = require('../models/Project')
+const logger = require('../utils/logger')
 
 /**
  * 调用 GitHub API 获取单个仓库的 Star 数
@@ -22,30 +23,30 @@ const fetchRepoStars = async (repo) => {
   return data.stargazers_count
 }
 
-/** 批量更新所有项目的 Star 数（单个失败不中断整体任务） */
+/** 批量更新所有项目的 Star 数（单个失败不中断整体任务；软删除的项目不再同步） */
 const syncAllStars = async () => {
-  console.log(`[syncStar] ${new Date().toLocaleString('zh-CN')} 开始同步 GitHub Star ...`)
+  logger.info(`[syncStar] 开始同步 GitHub Star ...`)
   try {
-    const projects = await Project.find()
+    const projects = await Project.find({ isDeleted: { $ne: true } })
     for (const project of projects) {
       try {
         project.stars = await fetchRepoStars(project.repo)
         await project.save()
-        console.log(`[syncStar] ${project.repo} -> ${project.stars}`)
+        logger.info(`[syncStar] ${project.repo} -> ${project.stars}`)
       } catch (error) {
-        console.error(`[syncStar] 更新失败 ${project.repo}: ${error.message}`)
+        logger.error(`[syncStar] 更新失败 ${project.repo}: ${error.message}`)
       }
     }
-    console.log(`[syncStar] 同步完成，共处理 ${projects.length} 个项目`)
+    logger.info(`[syncStar] 同步完成，共处理 ${projects.length} 个项目`)
   } catch (error) {
-    console.error(`[syncStar] 任务执行异常: ${error.message}`)
+    logger.error(`[syncStar] 任务执行异常: ${error.message}`)
   }
 }
 
 /** 注册定时任务：每天 02:00（Asia/Shanghai）执行 */
 const startSyncStarJob = () => {
   cron.schedule('0 2 * * *', syncAllStars, { timezone: 'Asia/Shanghai' })
-  console.log('[syncStar] 定时任务已注册（每天 02:00 执行）')
+  logger.info('[syncStar] 定时任务已注册（每天 02:00 执行）')
 }
 
 // syncAllStars 单独导出，便于手动触发测试：node -e "require('./src/schedule/syncStar').syncAllStars()"

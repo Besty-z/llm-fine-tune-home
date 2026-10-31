@@ -8,7 +8,8 @@ const advertSchema = new mongoose.Schema(
     linkUrl: { type: String, default: '' },         // 点击跳转地址
     position: { type: String, default: 'home' },    // 投放位置：home / sidebar 等
     sort: { type: Number, default: 0 },             // 排序值
-    enabled: { type: Boolean, default: true }       // 是否启用
+    enabled: { type: Boolean, default: true },      // 是否启用
+    isDeleted: { type: Boolean, default: false, index: true } // 软删除标记（查询默认过滤）
   },
   { timestamps: true }
 )

@@ -6,3 +6,8 @@ node_modules/
 
 # 日志
 *.log
+logs/
+
+# 上传文件（保留目录，忽略内容）
+uploads/*
+!uploads/.gitkeep

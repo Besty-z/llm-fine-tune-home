@@ -7,7 +7,8 @@ const articleSchema = new mongoose.Schema(
     summary: { type: String, default: '' },               // 摘要
     content: { type: String, default: '' },               // 正文（Markdown）
     category: { type: String, default: 'tech' },          // 分类：tech / enterprise 等
-    published: { type: Boolean, default: true }           // 是否发布
+    published: { type: Boolean, default: true },          // 是否发布
+    isDeleted: { type: Boolean, default: false, index: true } // 软删除标记（查询默认过滤）
   },
   { timestamps: true }
 )

@@ -1,58 +1,74 @@
-// 开源项目控制器：榜单增删改查
+// 开源项目控制器：榜单增删改查（软删除 + 可选分页）
 const Project = require('../models/Project')
-const { ok, fail } = require('../utils/resp')
+const ApiError = require('../utils/apiError')
+const { ok } = require('../utils/resp')
+const { paginate, isPageRequest } = require('../utils/pagination')
 
-/** 榜单列表：按 Star 数降序返回（前端榜单页数据源） */
-exports.getProjects = async (req, res) => {
+/** 榜单列表：按 Star 数降序；携带 page/pageSize/keyword 时返回分页结构 */
+exports.getProjects = async (req, res, next) => {
   try {
-    const projects = await Project.find().sort({ stars: -1 })
-    ok(res, projects)
+    // 兼容旧契约：不带分页参数时直接返回数组
+    if (!isPageRequest(req.query)) {
+      const projects = await Project.find({ isDeleted: { $ne: true } }).sort({ stars: -1 })
+      return ok(res, projects)
+    }
+    const result = await paginate(Project, {
+      query: req.query,
+      searchFields: ['name', 'description'],
+      sort: { stars: -1 }
+    })
+    ok(res, result)
   } catch (error) {
-    fail(res, 500, `查询失败: ${error.message}`)
+    next(error)
   }
 }
 
 /** 新增项目（管理员） */
-exports.createProject = async (req, res) => {
+exports.createProject = async (req, res, next) => {
   try {
     const { name, githubUrl, repo, description } = req.body
-    if (!name || !githubUrl || !repo) {
-      return fail(res, 400, '项目名称、GitHub 地址、仓库路径(repo) 为必填项')
-    }
-    const exists = await Project.findOne({ name })
+    const exists = await Project.findOne({ name, isDeleted: { $ne: true } })
     if (exists) {
-      return fail(res, 400, '该项目已存在')
+      throw ApiError.badRequest('该项目已存在')
     }
     const project = await Project.create({ name, githubUrl, repo, description })
     ok(res, project, '新增成功')
   } catch (error) {
-    fail(res, 500, `新增失败: ${error.message}`)
+    next(error)
   }
 }
 
-/** 更新项目（管理员） */
-exports.updateProject = async (req, res) => {
+/** 更新项目（管理员，软删除的数据不可更新） */
+exports.updateProject = async (req, res, next) => {
   try {
     // new: true 返回更新后的文档
-    const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true })
+    const project = await Project.findOneAndUpdate(
+      { _id: req.params.id, isDeleted: { $ne: true } },
+      req.body,
+      { new: true }
+    )
     if (!project) {
-      return fail(res, 404, '项目不存在')
+      throw ApiError.notFound('项目不存在')
     }
     ok(res, project, '更新成功')
   } catch (error) {
-    fail(res, 500, `更新失败: ${error.message}`)
+    next(error)
   }
 }
 
-/** 删除项目（管理员） */
-exports.deleteProject = async (req, res) => {
+/** 删除项目（管理员，软删除：仅标记 isDeleted，数据可恢复） */
+exports.deleteProject = async (req, res, next) => {
   try {
-    const project = await Project.findByIdAndDelete(req.params.id)
+    const project = await Project.findOneAndUpdate(
+      { _id: req.params.id, isDeleted: { $ne: true } },
+      { isDeleted: true },
+      { new: true }
+    )
     if (!project) {
-      return fail(res, 404, '项目不存在')
+      throw ApiError.notFound('项目不存在')
     }
     ok(res, null, '删除成功')
   } catch (error) {
-    fail(res, 500, `删除失败: ${error.message}`)
+    next(error)
   }
 }
