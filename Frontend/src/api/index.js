@@ -4,10 +4,11 @@ import axios from 'axios'
  * API 层说明
  * ----------
  * 当前项目为纯前端，所有接口均使用本地 Mock 数据模拟。
- * 后端就绪后：将 USE_MOCK 置为 false，并按约定实现以下接口即可无缝切换：
- *   - POST /api/auth/login        登录，入参 { username, password }，返回 { token, username }
- *   - GET  /api/projects/ranking  开源项目榜单（后端定时调用 GitHub API 更新 star 数并按 star 降序）
- *   - GET  /api/faq/list          FAQ 问答列表
+ * 后端就绪后：将 USE_MOCK 置为 false 即可切换为真实接口。
+ * 后端统一返回格式 { code, message, data }，下方真实请求已统一解包 data：
+ *   - POST /api/users/login  登录，入参 { username, password }，data 为 { token, username, role }
+ *   - GET  /api/projects     开源项目榜单（后端定时调用 GitHub API 更新 star 数并按 star 降序）
+ *   - GET  /api/faqs         FAQ 问答列表
  */
 const USE_MOCK = true
 
@@ -72,7 +73,8 @@ export const login = (username, password) => {
       }, 1000)
     })
   }
-  return request.post('/auth/login', { username, password }).then((res) => res.data)
+  // 真实接口：后端返回 { code, message, data }，取 data（{ token, username, role }）
+  return request.post('/users/login', { username, password }).then((res) => res.data.data)
 }
 
 /* ================= 开源项目榜单 ================= */
@@ -169,7 +171,8 @@ export const fetchProjectRanking = () => {
       }, 600)
     })
   }
-  return request.get('/projects/ranking').then((res) => res.data)
+  // 真实接口：后端已按 stars 降序排序，取 data 数组
+  return request.get('/projects').then((res) => res.data.data)
 }
 
 /* ================= FAQ 问答 ================= */
@@ -222,5 +225,6 @@ export const fetchFaqList = () => {
   if (USE_MOCK) {
     return new Promise((resolve) => setTimeout(() => resolve([...MOCK_FAQS]), 400))
   }
-  return request.get('/faq/list').then((res) => res.data)
+  // 真实接口：取 data 数组
+  return request.get('/faqs').then((res) => res.data.data)
 }

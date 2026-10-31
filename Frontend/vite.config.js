@@ -14,9 +14,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // 开发环境下将 /api 请求代理到后端服务（此处仅为前端，联调时改为真实后端地址）
+      // 开发环境下将 /api 请求代理到后端服务（Backend/src/server.js，端口见 Backend/.env）
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:5000',
         changeOrigin: true
       }
     }

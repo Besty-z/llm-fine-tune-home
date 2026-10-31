@@ -1,22 +1,53 @@
-// FAQ 控制器（占位）：TODO 后续补充业务逻辑
+// FAQ 控制器：问答增删改查
+const Faq = require('../models/Faq')
+const { ok, fail } = require('../utils/resp')
 
-/** FAQ 列表 */
+/** FAQ 列表：按 sort 升序（前端 FAQ 页数据源） */
 exports.getFaqs = async (req, res) => {
-  // TODO: Faq.find().sort({ sort: 1 })
-  res.json({ message: 'getFaqs 接口待实现' })
+  try {
+    const faqs = await Faq.find().sort({ sort: 1, createdAt: -1 })
+    ok(res, faqs)
+  } catch (error) {
+    fail(res, 500, `查询失败: ${error.message}`)
+  }
 }
 
-/** 新增 FAQ */
+/** 新增 FAQ（管理员） */
 exports.createFaq = async (req, res) => {
-  res.json({ message: 'createFaq 接口待实现' })
+  try {
+    const { question, answer, sort } = req.body
+    if (!question || !answer) {
+      return fail(res, 400, '问题和答案不能为空')
+    }
+    const faq = await Faq.create({ question, answer, sort })
+    ok(res, faq, '新增成功')
+  } catch (error) {
+    fail(res, 500, `新增失败: ${error.message}`)
+  }
 }
 
-/** 更新 FAQ */
+/** 更新 FAQ（管理员） */
 exports.updateFaq = async (req, res) => {
-  res.json({ message: 'updateFaq 接口待实现' })
+  try {
+    const faq = await Faq.findByIdAndUpdate(req.params.id, req.body, { new: true })
+    if (!faq) {
+      return fail(res, 404, 'FAQ 不存在')
+    }
+    ok(res, faq, '更新成功')
+  } catch (error) {
+    fail(res, 500, `更新失败: ${error.message}`)
+  }
 }
 
-/** 删除 FAQ */
+/** 删除 FAQ（管理员） */
 exports.deleteFaq = async (req, res) => {
-  res.json({ message: 'deleteFaq 接口待实现' })
+  try {
+    const faq = await Faq.findByIdAndDelete(req.params.id)
+    if (!faq) {
+      return fail(res, 404, 'FAQ 不存在')
+    }
+    ok(res, null, '删除成功')
+  } catch (error) {
+    fail(res, 500, `删除失败: ${error.message}`)
+  }
 }
