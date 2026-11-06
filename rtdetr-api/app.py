@@ -110,9 +110,12 @@ async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSON
     )
 
 
-@app.get("/", summary="服务状态")
+@app.api_route("/", methods=["GET", "HEAD"], summary="服务状态")
 def root() -> dict:
-    """返回服务与模型状态，部署后可直接打开确认模型是否就绪。"""
+    """返回服务与模型状态，部署后可直接打开确认模型是否就绪。
+
+    同时支持 HEAD，便于 Render 等平台做健康检查（HEAD 返回 200 且无响应体）。
+    """
     return {
         "success": True,
         "service": "RT-DETR 目标检测 API",
