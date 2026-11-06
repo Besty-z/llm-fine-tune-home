@@ -2,8 +2,8 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 # 纯 CPU 版 PyTorch（体积小、内存占用低，无任何 CUDA 依赖）
-torch==2.4.1+cpu
-torchvision==0.19.1+cpu
+torch==2.9.0+cpu
+torchvision==0.20.0+cpu
 
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
@@ -16,7 +16,5 @@ numpy==1.26.4
 ultralytics==8.3.40
 
 # 服务器无显示器：用 headless 版 OpenCV，避免 libGL.so.1 缺失报错。
-# 注意：必须放在 ultralytics 之后安装，让其覆盖 opencv-python 的 cv2 文件。
-# 若部署时仍报 libGL 错误，可将 render.yaml 的 buildCommand 改为：
-#   pip install --no-cache-dir -r requirements.txt && pip uninstall -y opencv-python && pip install --no-cache-dir opencv-python-headless==4.10.0.84
+# 注意：必须放在 ultralytics 之后安装，覆盖 opencv-python
 opencv-python-headless==4.10.0.84

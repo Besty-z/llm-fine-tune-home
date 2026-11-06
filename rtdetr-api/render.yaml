@@ -1,41 +1,10 @@
-# Render Blueprint 一键部署配置
-# 注意：render.yaml 必须位于 Git 仓库根目录才能被 Blueprint 识别。
-# 使用方法：Render 控制台 → New + → Blueprint → 选择仓库 → Apply。
 services:
   - type: web
-    name: rtdetr-api
-    runtime: python
-    plan: free                    # 免费版：512MB 内存 / 共享 CPU / 15 分钟无请求休眠
-    region: singapore             # 可改：oregon / ohio / virginia / frankfurt / singapore
-    branch: main                  # 改成你的默认分支名
-
-    # --no-cache-dir：减少构建期磁盘占用（torch wheel 较大）
+    name: rt-detr-demo
+    env: python
     buildCommand: pip install --no-cache-dir -r requirements.txt
-
-    # Render 通过 $PORT 注入端口，必须监听 0.0.0.0；单 worker（内存只有 512MB）
-    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
-
-    healthCheckPath: /healthz
-
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    plan: free
     envVars:
-      # 指定 Python 版本
       - key: PYTHON_VERSION
-        value: 3.10.13
-
-      # 魔搭 ModelScope 权重直链（模型必须设为公开）：
-      #   https://modelscope.cn/api/v1/models/<命名空间>/<模型名>/repo?FilePath=best.pt
-      # 私有模型需改用 modelscope SDK + token，不建议在免费版使用。
-      - key: MODEL_URL
-        value: "https://modelscope.cn/api/v1/models/your_namespace/your_model/repo?FilePath=best.pt"
-
-      # 单线程推理：免费版共享 CPU 很弱，多线程反而更慢更耗内存
-      - key: TORCH_THREADS
-        value: "1"
-      - key: OMP_NUM_THREADS
-        value: "1"
-      - key: MKL_NUM_THREADS
-        value: "1"
-
-      # 上传图片大小上限（字节），默认 10MB，防止大图把内存打爆
-      - key: MAX_IMAGE_BYTES
-        value: "10485760"
+        value: 3.10.14
