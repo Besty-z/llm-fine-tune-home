@@ -38,6 +38,12 @@ const routes = [
     component: () => import('@/views/LoginView.vue'),
     meta: { title: '登录' }
   },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/RegisterView.vue'),
+    meta: { title: '注册' }
+  },
   // 未匹配路径重定向到首页
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]

@@ -53,9 +53,9 @@
 
       <div class="login-tip">
         <el-divider content-position="center">
-          <span class="tip-text">演示环境</span>
+          <span class="tip-text">还没有账号？</span>
         </el-divider>
-        <p>当前为前端演示环境，输入任意非空用户名和密码即可登录</p>
+        <router-link to="/register" class="register-link">立即注册</router-link>
       </div>
     </div>
   </div>
@@ -174,10 +174,14 @@ const handleLogin = async () => {
   color: var(--app-text-secondary);
 }
 
-.login-tip p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--app-text-placeholder, #5b6d94);
+.register-link {
+  font-size: 13px;
+  color: var(--app-accent);
+  text-decoration: none;
+}
+
+.register-link:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 480px) {

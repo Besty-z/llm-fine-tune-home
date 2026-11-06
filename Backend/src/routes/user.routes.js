@@ -4,7 +4,7 @@ const router = express.Router()
 const userController = require('../controllers/user.controller')
 const { verifyToken, requireAdmin } = require('../middleware/auth')
 const validate = require('../middleware/validate')
-const { registerSchema, loginSchema } = require('../validations/user.validation')
+const { registerSchema, loginSchema, updateProfileSchema } = require('../validations/user.validation')
 
 /**
  * @swagger
@@ -63,6 +63,48 @@ router.post('/register', validate({ body: registerSchema }), userController.regi
  *         description: 用户名或密码错误
  */
 router.post('/login', validate({ body: loginSchema }), userController.login)
+
+/**
+ * @swagger
+ * /users/profile:
+ *   get:
+ *     summary: 获取个人信息（当前登录用户）
+ *     tags: [Users]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: 个人信息（不含密码字段）
+ *       401:
+ *         description: 未登录或 Token 无效
+ */
+router.get('/profile', verifyToken, userController.getProfile)
+
+/**
+ * @swagger
+ * /users/profile:
+ *   put:
+ *     summary: 修改个人资料（仅本人，头像地址来自 /upload/image 上传接口）
+ *     tags: [Users]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nickname: { type: string, example: 微调小能手, description: 昵称（1-30 字） }
+ *               avatar: { type: string, example: /uploads/xxx.png, description: 头像地址（本站上传路径或外链，留空清除） }
+ *               bio: { type: string, example: 专注 LLM 微调, description: 个人简介（最多 200 字） }
+ *     responses:
+ *       200:
+ *         description: 更新成功，返回最新个人资料
+ *       400:
+ *         description: 参数校验失败
+ *       401:
+ *         description: 未登录或 Token 无效
+ */
+router.put('/profile', verifyToken, validate({ body: updateProfileSchema }), userController.updateProfile)
 
 /**
  * @swagger

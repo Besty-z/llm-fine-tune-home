@@ -1,11 +1,11 @@
-// 图片上传路由：仅管理员可用，multer 限制图片格式与大小
+// 图片上传路由：登录用户可用（头像、广告图等场景），multer 限制图片格式与大小
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
 const express = require('express')
 const multer = require('multer')
 const router = express.Router()
-const { verifyToken, requireAdmin } = require('../middleware/auth')
+const { verifyToken } = require('../middleware/auth')
 const ApiError = require('../utils/apiError')
 const { ok } = require('../utils/resp')
 
@@ -50,7 +50,7 @@ const upload = multer({
  * @swagger
  * /upload/image:
  *   post:
- *     summary: 上传图片（管理员，限 jpg/png/gif/webp，最大 2MB）
+ *     summary: 上传图片（登录用户，限 jpg/png/gif/webp，最大 2MB）
  *     tags: [Upload]
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
@@ -69,13 +69,10 @@ const upload = multer({
  *         description: 未选择文件或格式/大小不符合要求
  *       401:
  *         description: 未登录
- *       403:
- *         description: 非管理员
  */
 router.post(
   '/image',
   verifyToken,
-  requireAdmin,
   upload.single('file'),
   (req, res, next) => {
     try {

@@ -58,3 +58,35 @@ exports.getUsers = async (req, res, next) => {
     next(error)
   }
 }
+
+/** 获取个人信息（当前登录用户，不返回密码字段） */
+exports.getProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password')
+    if (!user) {
+      throw ApiError.notFound('用户不存在')
+    }
+    ok(res, user)
+  } catch (error) {
+    next(error)
+  }
+}
+
+/** 修改个人资料（仅本人：从 JWT 取当前用户 id，天然隔离他人账号） */
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { nickname, avatar, bio } = req.body
+    // 只更新提交的字段，未提交字段保持不变
+    const updates = {}
+    if (nickname !== undefined) updates.nickname = nickname
+    if (avatar !== undefined) updates.avatar = avatar
+    if (bio !== undefined) updates.bio = bio
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password')
+    if (!user) {
+      throw ApiError.notFound('用户不存在')
+    }
+    ok(res, user, '更新成功')
+  } catch (error) {
+    next(error)
+  }
+}

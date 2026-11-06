@@ -3,14 +3,13 @@ import axios from 'axios'
 /**
  * API 层说明
  * ----------
- * 当前项目为纯前端，所有接口均使用本地 Mock 数据模拟。
- * 后端就绪后：将 USE_MOCK 置为 false 即可切换为真实接口。
+ * 已接入真实后端接口（USE_MOCK = false）。本地 Mock 数据保留用于离线调试，置回 true 即可切换。
  * 后端统一返回格式 { code, message, data }，下方真实请求已统一解包 data：
  *   - POST /api/users/login  登录，入参 { username, password }，data 为 { token, username, role }
  *   - GET  /api/projects     开源项目榜单（后端定时调用 GitHub API 更新 star 数并按 star 降序）
  *   - GET  /api/faqs         FAQ 问答列表
  */
-const USE_MOCK = true
+const USE_MOCK = false
 
 // Axios 实例：统一 baseURL、超时与鉴权头
 const request = axios.create({
@@ -26,6 +25,15 @@ request.interceptors.request.use((config) => {
   }
   return config
 })
+
+// 响应拦截器：统一提取后端 { code, message } 中的错误信息，页面直接展示
+request.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    const message = error.response?.data?.message || error.message || '网络请求失败'
+    return Promise.reject(new Error(message))
+  }
+)
 
 /* ================= 鉴权相关 ================= */
 
@@ -75,6 +83,29 @@ export const login = (username, password) => {
   }
   // 真实接口：后端返回 { code, message, data }，取 data（{ token, username, role }）
   return request.post('/users/login', { username, password }).then((res) => res.data.data)
+}
+
+/**
+ * 注册
+ * @param {string} username 用户名（2-20 位）
+ * @param {string} password 密码（6-64 位）
+ * @returns {Promise<{id: string, username: string, role: string}>}
+ */
+export const register = (username, password) => {
+  if (USE_MOCK) {
+    // Mock：任意非空账号密码即可注册成功
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (username && password) {
+          resolve({ id: `mock-${Date.now()}`, username, role: 'user' })
+        } else {
+          reject(new Error('用户名或密码不能为空'))
+        }
+      }, 800)
+    })
+  }
+  // 真实接口：取 data（{ id, username, role }）；首个注册用户自动成为管理员
+  return request.post('/users/register', { username, password }).then((res) => res.data.data)
 }
 
 /* ================= 开源项目榜单 ================= */

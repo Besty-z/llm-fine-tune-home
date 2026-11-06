@@ -20,4 +20,20 @@ const loginSchema = z.object({
   password: z.string({ error: '密码不能为空' }).min(1, '密码不能为空')
 })
 
-module.exports = { registerSchema, loginSchema }
+// 修改个人资料：字段均可选，但至少提交一个字段
+const updateProfileSchema = z
+  .object({
+    nickname: z.string().trim().min(1, '昵称不能为空').max(30, '昵称最多 30 个字符').optional(),
+    // 头像支持本站上传路径或外链，留空表示清除头像
+    avatar: z
+      .string()
+      .max(300, '头像地址最多 300 字')
+      .refine((v) => v === '' || v.startsWith('/uploads/') || /^https?:\/\//.test(v), {
+        message: '头像地址格式不正确'
+      })
+      .optional(),
+    bio: z.string().max(200, '个人简介最多 200 字').optional()
+  })
+  .refine((data) => Object.keys(data).length > 0, { message: '至少需要提交一个待更新字段' })
+
+module.exports = { registerSchema, loginSchema, updateProfileSchema }
