@@ -133,7 +133,8 @@ pip install -r requirements.txt
 uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-启动前需配置 `MODEL_URL`（权重下载直链），接口文档见 http://localhost:8000/docs。
+启动前请把训练好的 `best.pt` 放到 `rtdetr-api/` 下与 `app.py` 同级（服务启动直接加载本地权重，不再联网下载），
+接口文档见 http://localhost:8000/docs。
 
 ---
 
