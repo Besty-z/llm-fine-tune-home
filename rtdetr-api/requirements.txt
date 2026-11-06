@@ -2,8 +2,9 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 # 纯 CPU 版 PyTorch（体积小、内存占用低，无任何 CUDA 依赖）
+# 版本必须成对：torch 2.9.x 对应 torchvision 0.24.x，跨版本会报「No matching distribution」
 torch==2.9.0+cpu
-torchvision==0.20.0+cpu
+torchvision==0.24.0+cpu
 
 fastapi==0.115.6
 uvicorn[standard]==0.34.0

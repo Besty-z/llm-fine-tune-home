@@ -2,9 +2,12 @@ services:
   - type: web
     name: rt-detr-demo
     env: python
+    # 服务根目录：构建命令在 rtdetr-api 目录下执行
+    rootDir: rtdetr-api
     buildCommand: pip install --no-cache-dir -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     plan: free
     envVars:
+      # 必须显式指定，否则 Render 会用当前默认版本（曾出现默认 3.14 导致依赖无 wheel）
       - key: PYTHON_VERSION
-        value: 3.10.14
+        value: 3.11.9
