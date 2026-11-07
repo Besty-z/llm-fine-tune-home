@@ -21,7 +21,7 @@ services:
       - key: JWT_SECRET
         generateValue: true       # 由 Render 自动生成强随机密钥
       - key: CORS_ORIGINS
-        sync: false               # 在控制台填前端域名 https://llm-web.onrender.com
+        sync: false               # 在控制台填前端域名 https://llm-web-28e7.onrender.com
       - key: GITHUB_TOKEN
         sync: false               # 可选，提升 Star 同步的 GitHub API 限流额度
 
@@ -34,7 +34,7 @@ services:
     staticPublishPath: dist       # Render 托管该目录
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://llm-api.onrender.com/api  # 与后端域名对应，构建时注入
+        value: https://llm-api-df53.onrender.com/api  # 与后端真实域名对应，构建时注入
     # 前端使用 history 路由模式（createWebHistory），需把所有路径回退到 index.html
     # 否则刷新 /tech、/login 等子路由会 404
     routes:
