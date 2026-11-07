@@ -12,8 +12,11 @@ import axios from 'axios'
 const USE_MOCK = false
 
 // Axios 实例：统一 baseURL、超时与鉴权头
+// baseURL 说明：
+// - 开发环境：走 vite.config.js 的 /api 代理到本地后端，无需配置
+// - 生产环境：前后端分开部署，通过 .env.production 的 VITE_API_BASE_URL 指向后端域名
 const request = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000
 })
 

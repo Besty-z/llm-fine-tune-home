@@ -1,0 +1,44 @@
+# Render 部署清单：前后端分开部署（一个后端 Web Service + 一个前端 Static Site）
+# 用法：Render 控制台 -> New -> Blueprint -> 连接本仓库，Render 会自动识别本文件
+# 注意：rtdetr-api 已在 llm-fine-tune-home 名单独部署，本清单不再包含它，避免重复创建
+
+services:
+  # -------------------- 后端 Express API --------------------
+  - type: web
+    name: llm-api                 # 服务名，域名将是 https://llm-api.onrender.com
+    env: node
+    region: singapore             # 距国内较近，可按需改
+    plan: free
+    rootDir: Backend              # 在 Backend 目录下执行构建与启动
+    buildCommand: npm install
+    startCommand: npm start       # 等价于 node src/server.js
+    healthCheckPath: /api/health  # Render 用它判断服务是否就绪
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false               # 敏感值，在控制台手动填 Atlas 连接串
+      - key: JWT_SECRET
+        generateValue: true       # 由 Render 自动生成强随机密钥
+      - key: CORS_ORIGINS
+        sync: false               # 在控制台填前端域名 https://llm-web.onrender.com
+      - key: GITHUB_TOKEN
+        sync: false               # 可选，提升 Star 同步的 GitHub API 限流额度
+
+  # -------------------- 前端 Vue3 静态站 --------------------
+  - type: web
+    name: llm-web                 # 服务名，域名将是 https://llm-web.onrender.com
+    env: static                   # 静态站点，无需 Node 运行时
+    plan: free
+    rootDir: Frontend
+    buildCommand: npm install && npm run build   # 产出 Frontend/dist
+    staticPublishPath: dist       # Render 托管该目录
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://llm-api.onrender.com/api  # 与后端域名对应，构建时注入
+    # 前端使用 history 路由模式（createWebHistory），需把所有路径回退到 index.html
+    # 否则刷新 /tech、/login 等子路由会 404
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
