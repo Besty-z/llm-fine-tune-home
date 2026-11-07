@@ -7,6 +7,19 @@ FAQ 问答、企业方案、文章与广告位，并提供管理员后台所需�
 
 ---
 
+## 在线访问（Render 免费部署）
+
+| 服务 | 地址 | 说明 |
+| --- | --- | --- |
+| 网站前端 | https://llm-web-28e7.onrender.com | Vue3 静态站，用户访问入口 |
+| 后端 API | https://llm-api-df53.onrender.com | Express 接口服务 |
+| 接口文档 | https://llm-api-df53.onrender.com/api-docs | Swagger 在线调试 |
+| RT-DETR 检测 | https://llm-fine-tune-home.onrender.com | 独立的目标检测推理服务（FastAPI） |
+
+> 三个服务均为 Render 免费实例，闲置 15 分钟会休眠，首次访问需 30~60 秒冷启动，属正常现象。
+
+---
+
 ## 技术栈
 
 ### 前端

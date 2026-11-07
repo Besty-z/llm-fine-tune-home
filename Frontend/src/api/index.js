@@ -42,6 +42,7 @@ request.interceptors.response.use(
 
 const TOKEN_KEY = 'llm_finetune_token'
 const USERNAME_KEY = 'llm_finetune_username'
+const ROLE_KEY = 'llm_finetune_role'
 /** 登录状态变化事件名（NavBar 等组件监听以刷新 UI） */
 export const AUTH_CHANGE_EVENT = 'llm-auth-change'
 
@@ -51,10 +52,17 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY)
 /** 获取本地存储的用户名 */
 export const getUsername = () => localStorage.getItem(USERNAME_KEY)
 
+/** 获取本地存储的角色（user / admin），默认按普通用户处理 */
+export const getRole = () => localStorage.getItem(ROLE_KEY) || 'user'
+
+/** 当前登录用户是否为管理员 */
+export const isAdmin = () => getRole() === 'admin'
+
 /** 保存登录态并广播事件 */
-export const saveAuth = (token, username) => {
+export const saveAuth = (token, username, role = 'user') => {
   localStorage.setItem(TOKEN_KEY, token)
   localStorage.setItem(USERNAME_KEY, username)
+  localStorage.setItem(ROLE_KEY, role)
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT))
 }
 
@@ -62,6 +70,7 @@ export const saveAuth = (token, username) => {
 export const clearAuth = () => {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USERNAME_KEY)
+  localStorage.removeItem(ROLE_KEY)
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT))
 }
 
@@ -77,7 +86,7 @@ export const login = (username, password) => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         if (username && password) {
-          resolve({ token: `mock-token-${Date.now()}`, username })
+          resolve({ token: `mock-token-${Date.now()}`, username, role: 'admin' })
         } else {
           reject(new Error('用户名或密码不能为空'))
         }
@@ -262,3 +271,191 @@ export const fetchFaqList = () => {
   // 真实接口：取 data 数组
   return request.get('/faqs').then((res) => res.data.data)
 }
+
+/* ================= 微调目录 ================= */
+
+/**
+ * 获取微调目录（模型、数据集、微调方法、默认超参）
+ * @returns {Promise<{models:Array, datasets:Array, methods:Array, defaults:object}>}
+ */
+export const fetchCatalog = () => request.get('/catalog').then((res) => res.data.data)
+
+/* ================= 微调任务 ================= */
+
+/**
+ * 获取任务列表
+ * @param {object} [params] 查询参数（status / page / pageSize / keyword）
+ * @returns {Promise<Array|{list:Array,total:number}>} 不传分页参数时为数组，否则为分页结构
+ */
+export const fetchTasks = (params = {}) => request.get('/tasks', { params }).then((res) => res.data.data)
+
+/**
+ * 获取任务详情
+ * @param {string} id 任务 ID
+ * @returns {Promise<object>}
+ */
+export const fetchTaskById = (id) => request.get(`/tasks/${id}`).then((res) => res.data.data)
+
+/**
+ * 新建微调任务
+ * @param {object} payload { name, baseModel, datasetUrl?, trainingConfig }
+ * @returns {Promise<object>} 创建后的任务
+ */
+export const createTask = (payload) => request.post('/tasks', payload).then((res) => res.data.data)
+
+/**
+ * 更新微调任务
+ * @param {string} id 任务 ID
+ * @param {object} payload 待更新字段
+ * @returns {Promise<object>}
+ */
+export const updateTask = (id, payload) => request.put(`/tasks/${id}`, payload).then((res) => res.data.data)
+
+/**
+ * 删除任务（软删除）
+ * @param {string} id 任务 ID
+ * @returns {Promise<null>}
+ */
+export const deleteTask = (id) => request.delete(`/tasks/${id}`).then((res) => res.data.data)
+
+/**
+ * 启动训练
+ * @param {string} id 任务 ID
+ * @returns {Promise<object>} 启动后的任务（状态 running）
+ */
+export const startTask = (id) => request.post(`/tasks/${id}/start`).then((res) => res.data.data)
+
+/**
+ * 停止训练
+ * @param {string} id 任务 ID
+ * @returns {Promise<object>} 停止后的任务（状态 failed）
+ */
+export const stopTask = (id) => request.post(`/tasks/${id}/stop`).then((res) => res.data.data)
+
+/**
+ * 增量获取训练日志
+ * @param {string} id 任务 ID
+ * @param {number} [offset] 上次的字符偏移量
+ * @returns {Promise<{chunk:string, offset:number, reset:boolean, status:string, progress:number}>}
+ */
+export const fetchTaskLogs = (id, offset = 0) =>
+  request.get(`/tasks/${id}/logs`, { params: { offset } }).then((res) => res.data.data)
+
+/**
+ * 增量获取训练指标
+ * @param {string} id 任务 ID
+ * @param {number} [since] 只返回大于该 step 的指标点
+ * @returns {Promise<{metrics:Array, status:string, progress:number}>}
+ */
+export const fetchTaskMetrics = (id, since = 0) =>
+  request.get(`/tasks/${id}/metrics`, { params: { since } }).then((res) => res.data.data)
+
+/* ================= 管理员：内容管理 ================= */
+
+/**
+ * 获取文章列表（管理员视图使用分页参数）
+ * @param {object} [params] page / pageSize / keyword / category
+ * @returns {Promise<Array|{list:Array,total:number}>}
+ */
+export const fetchArticles = (params = {}) => request.get('/articles', { params }).then((res) => res.data.data)
+
+/**
+ * 新增文章（管理员）
+ * @param {object} payload { title, summary, content, category, published }
+ * @returns {Promise<object>}
+ */
+export const createArticle = (payload) => request.post('/articles', payload).then((res) => res.data.data)
+
+/**
+ * 更新文章（管理员）
+ * @param {string} id 文章 ID
+ * @param {object} payload 待更新字段
+ * @returns {Promise<object>}
+ */
+export const updateArticle = (id, payload) => request.put(`/articles/${id}`, payload).then((res) => res.data.data)
+
+/**
+ * 删除文章（管理员，软删除）
+ * @param {string} id 文章 ID
+ * @returns {Promise<null>}
+ */
+export const deleteArticle = (id) => request.delete(`/articles/${id}`).then((res) => res.data.data)
+
+/**
+ * 获取 FAQ 列表（管理员视图使用分页参数）
+ * @param {object} [params] page / pageSize / keyword
+ * @returns {Promise<Array|{list:Array,total:number}>}
+ */
+export const fetchFaqsPaged = (params = {}) => request.get('/faqs', { params }).then((res) => res.data.data)
+
+/**
+ * 新增 FAQ（管理员）
+ * @param {object} payload { question, answer, sort }
+ * @returns {Promise<object>}
+ */
+export const createFaq = (payload) => request.post('/faqs', payload).then((res) => res.data.data)
+
+/**
+ * 更新 FAQ（管理员）
+ * @param {string} id FAQ ID
+ * @param {object} payload 待更新字段
+ * @returns {Promise<object>}
+ */
+export const updateFaq = (id, payload) => request.put(`/faqs/${id}`, payload).then((res) => res.data.data)
+
+/**
+ * 删除 FAQ（管理员，软删除）
+ * @param {string} id FAQ ID
+ * @returns {Promise<null>}
+ */
+export const deleteFaq = (id) => request.delete(`/faqs/${id}`).then((res) => res.data.data)
+
+/**
+ * 获取广告列表（管理员视图使用分页参数）
+ * @param {object} [params] page / pageSize / keyword
+ * @returns {Promise<Array|{list:Array,total:number}>}
+ */
+export const fetchAdverts = (params = {}) => request.get('/adverts', { params }).then((res) => res.data.data)
+
+/**
+ * 新增广告（管理员）
+ * @param {object} payload { title, imageUrl, linkUrl, position, sort, enabled }
+ * @returns {Promise<object>}
+ */
+export const createAdvert = (payload) => request.post('/adverts', payload).then((res) => res.data.data)
+
+/**
+ * 更新广告（管理员）
+ * @param {string} id 广告 ID
+ * @param {object} payload 待更新字段
+ * @returns {Promise<object>}
+ */
+export const updateAdvert = (id, payload) => request.put(`/adverts/${id}`, payload).then((res) => res.data.data)
+
+/**
+ * 删除广告（管理员，软删除）
+ * @param {string} id 广告 ID
+ * @returns {Promise<null>}
+ */
+export const deleteAdvert = (id) => request.delete(`/adverts/${id}`).then((res) => res.data.data)
+
+/* ================= 管理员：Star 同步 ================= */
+
+/**
+ * 手动触发 GitHub Star 同步（管理员）
+ * @returns {Promise<object>} 本次同步记录
+ */
+export const triggerStarSync = () => request.post('/sync/star').then((res) => res.data.data)
+
+/**
+ * 获取 Star 同步记录（管理员）
+ * @param {object} [params] page / pageSize / triggerType / status
+ * @returns {Promise<Array|{list:Array,total:number}>}
+ */
+export const fetchSyncRecords = (params = {}) => request.get('/sync/records', { params }).then((res) => res.data.data)
+
+/**
+ * 获取用户列表（管理员）
+ * @returns {Promise<Array>}
+ */
+export const fetchUsers = () => request.get('/users').then((res) => res.data.data)

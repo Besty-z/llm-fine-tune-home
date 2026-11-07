@@ -76,11 +76,25 @@ router.get('/:id', verifyToken, taskController.getTaskById)
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, datasetUrl, baseModel]
+ *             required: [name, baseModel]
  *             properties:
  *               name: { type: string, example: Qwen2.5-7B LoRA 微调 }
- *               datasetUrl: { type: string, example: https://example.com/dataset.jsonl }
+ *               datasetUrl: { type: string, description: 自定义数据集地址（可选） }
  *               baseModel: { type: string, example: Qwen2.5-7B }
+ *               trainingConfig:
+ *                 type: object
+ *                 description: 训练超参（缺省使用默认值）
+ *                 properties:
+ *                   method: { type: string, enum: [lora, qlora, full], default: lora }
+ *                   dataset: { type: string, example: alpaca_zh }
+ *                   learningRate: { type: number, default: 0.0002 }
+ *                   epochs: { type: integer, default: 3 }
+ *                   batchSize: { type: integer, default: 4 }
+ *                   gradientAccumulation: { type: integer, default: 4 }
+ *                   loraRank: { type: integer, default: 8 }
+ *                   loraAlpha: { type: integer, default: 16 }
+ *                   cutoffLen: { type: integer, default: 1024 }
+ *                   quantBits: { type: integer, enum: [4, 8], default: 4 }
  *     responses:
  *       200:
  *         description: 新增成功，初始状态 pending
@@ -140,5 +154,97 @@ router.put('/:id', verifyToken, validate({ body: updateTaskSchema }), taskContro
  *         description: 任务不存在（或非本人任务）
  */
 router.delete('/:id', verifyToken, taskController.deleteTask)
+
+/**
+ * @swagger
+ * /tasks/{id}/start:
+ *   post:
+ *     summary: 启动训练（模拟执行器逐步推进）
+ *     tags: [Tasks]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: 启动成功，状态 running
+ *       400:
+ *         description: 任务已在运行
+ *       404:
+ *         description: 任务不存在（或非本人任务）
+ */
+router.post('/:id/start', verifyToken, taskController.startTask)
+
+/**
+ * @swagger
+ * /tasks/{id}/stop:
+ *   post:
+ *     summary: 停止训练（状态置为 failed 并记录原因）
+ *     tags: [Tasks]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: 停止成功
+ *       400:
+ *         description: 任务当前没有在运行
+ *       404:
+ *         description: 任务不存在（或非本人任务）
+ */
+router.post('/:id/stop', verifyToken, taskController.stopTask)
+
+/**
+ * @swagger
+ * /tasks/{id}/logs:
+ *   get:
+ *     summary: 增量获取任务日志
+ *     tags: [Tasks]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: offset
+ *         schema: { type: integer, default: 0 }
+ *         description: 上次返回的字符偏移量
+ *     responses:
+ *       200:
+ *         description: 返回 { chunk, offset, reset, status, progress }
+ *       404:
+ *         description: 任务不存在（或非本人任务）
+ */
+router.get('/:id/logs', verifyToken, taskController.getTaskLogs)
+
+/**
+ * @swagger
+ * /tasks/{id}/metrics:
+ *   get:
+ *     summary: 增量获取 loss / 学习率指标
+ *     tags: [Tasks]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: since
+ *         schema: { type: integer, default: 0 }
+ *         description: 只返回 step 大于该值的指标点
+ *     responses:
+ *       200:
+ *         description: 返回 { metrics, status, progress }
+ *       404:
+ *         description: 任务不存在（或非本人任务）
+ */
+router.get('/:id/metrics', verifyToken, taskController.getTaskMetrics)
 
 module.exports = router

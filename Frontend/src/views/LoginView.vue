@@ -63,11 +63,12 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { login, saveAuth } from '@/api'
 
+const route = useRoute()
 const router = useRouter()
 
 // 表单引用与数据
@@ -99,11 +100,12 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    const { token, username } = await login(form.username, form.password)
-    // 保存登录态（NavBar 监听事件自动刷新）
-    saveAuth(token, username)
+    const { token, username, role } = await login(form.username, form.password)
+    // 保存登录态（含角色，用于展示管理后台入口；NavBar 监听事件自动刷新）
+    saveAuth(token, username, role)
     ElMessage.success(`欢迎回来，${username}`)
-    router.push('/')
+    // 登录前被拦截的页面优先回跳
+    router.push(route.query.redirect || '/')
   } catch (error) {
     ElMessage.error(error.message || '登录失败，请稍后重试')
   } finally {

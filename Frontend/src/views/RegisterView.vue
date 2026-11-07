@@ -119,8 +119,8 @@ const handleRegister = async () => {
     ElMessage.success(`注册成功，欢迎你，${username}`)
     // 注册成功后自动登录，免去二次输入
     try {
-      const { token, username: loginName } = await login(form.username, form.password)
-      saveAuth(token, loginName)
+      const { token, username: loginName, role } = await login(form.username, form.password)
+      saveAuth(token, loginName, role)
       router.push('/')
     } catch {
       // 自动登录失败则引导手动登录

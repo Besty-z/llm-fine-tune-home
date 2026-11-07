@@ -111,6 +111,26 @@ a:hover {
   box-shadow: 0 8px 24px var(--app-accent-glow);
 }
 
+/* ===== 表格 / 描述列表暗色适配（工作台与后台使用） ===== */
+.el-table {
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: rgba(79, 195, 247, 0.06);
+  --el-table-row-hover-bg-color: rgba(79, 195, 247, 0.08);
+  --el-table-border-color: var(--app-border);
+  --el-table-text-color: var(--app-text);
+  --el-table-header-text-color: var(--app-text-secondary);
+}
+
+.el-descriptions {
+  --el-descriptions-table-border: 1px solid var(--app-border);
+}
+
+/* 卡片内的标签页去掉默认横线外额外留白 */
+.el-tabs__item {
+  font-size: 14px;
+}
+
 /* ===== 移动端适配 ===== */
 @media (max-width: 768px) {
   .page-container {

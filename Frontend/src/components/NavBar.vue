@@ -31,7 +31,9 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item command="tasks">微调工作台</el-dropdown-item>
+                <el-dropdown-item v-if="isAdminUser" command="admin">管理后台</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -87,7 +89,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getToken, getUsername, clearAuth, AUTH_CHANGE_EVENT } from '@/api'
+import { getToken, getUsername, clearAuth, isAdmin, AUTH_CHANGE_EVENT } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,14 +109,30 @@ const username = computed(() => {
   return getUsername()
 })
 
-// 导航菜单配置
-const menuItems = [
-  { path: '/', title: '首页' },
-  { path: '/tech', title: '技术概要' },
-  { path: '/ranking', title: '开源项目榜单' },
-  { path: '/enterprise', title: '企业介绍' },
-  { path: '/faq', title: 'FAQ问答' }
-]
+// 是否为管理员（登录态变化时重新计算）
+const isAdminUser = computed(() => {
+  void tokenVersion.value
+  return isLoggedIn.value && isAdmin()
+})
+
+// 导航菜单配置：登录后展示微调工作台，管理员额外展示管理后台
+const menuItems = computed(() => {
+  void tokenVersion.value
+  const items = [
+    { path: '/', title: '首页' },
+    { path: '/tech', title: '技术概要' },
+    { path: '/ranking', title: '开源项目榜单' },
+    { path: '/enterprise', title: '企业介绍' },
+    { path: '/faq', title: 'FAQ问答' }
+  ]
+  if (isLoggedIn.value) {
+    items.push({ path: '/tasks', title: '微调工作台' })
+  }
+  if (isAdminUser.value) {
+    items.push({ path: '/admin', title: '管理后台' })
+  }
+  return items
+})
 
 /** 判断菜单项是否为当前路由 */
 const isActive = (path) => (path === '/' ? route.path === '/' : route.path.startsWith(path))
@@ -142,6 +160,8 @@ const handleLogout = () => {
 /** 用户下拉菜单命令 */
 const handleUserCommand = (command) => {
   if (command === 'logout') handleLogout()
+  if (command === 'tasks') router.push('/tasks')
+  if (command === 'admin') router.push('/admin')
 }
 
 // 监听登录状态变化事件（登录页登录成功后触发）
