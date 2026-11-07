@@ -28,8 +28,7 @@ services:
   # -------------------- 前端 Vue3 静态站 --------------------
   - type: web
     name: llm-web                 # 服务名，域名将是 https://llm-web.onrender.com
-    env: static                   # 静态站点，无需 Node 运行时
-    plan: free
+    env: static                   # 静态站点，无需 Node 运行时（静态站无 plan 字段，本身免费）
     rootDir: Frontend
     buildCommand: npm install && npm run build   # 产出 Frontend/dist
     staticPublishPath: dist       # Render 托管该目录
